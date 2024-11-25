@@ -21,8 +21,13 @@ router.delete('/:id', auth, multer, bookController.deleteBook);
 
 router.get('/:id', bookController.getBookById);
 
-
 // Route pour récupérer les meilleurs livres
+router.get('/bestrating', bookController.getBestRatedBooks);
+
+// Route pour noter un livre
+router.post('/:id/rating', auth, bookController.rateBook);
+
+// Récupéré les trois livres les mieux notés
 router.get('/bestrating', bookController.getBestRatedBooks);
 
 module.exports = router;
