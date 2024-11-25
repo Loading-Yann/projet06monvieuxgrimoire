@@ -1,11 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const bookController = require('../controllers/book.controller'); // Vérifie ce chemin
-const auth = require('../middlewares/auth.middleware'); // Vérifie ce chemin
-const multer = require('../middlewares/multer-config');
-
-
-
+const bookController = require('../controllers/book.controller'); // Chemin vers le contrôleur des livres
+const auth = require('../middlewares/auth.middleware'); // Middleware d'authentification
+const multer = require('../middlewares/multer-config'); // Middleware pour le traitement des fichiers
 
 // Route pour récupérer tous les livres (accessible à tous)
 router.get('/', bookController.getBooks);
@@ -17,17 +14,15 @@ router.post('/', auth, multer, bookController.addBook);
 router.put('/:id', auth, multer, bookController.updateBook);
 
 // Route pour supprimer un livre (auth requise)
-router.delete('/:id', auth, multer, bookController.deleteBook);
+router.delete('/:id', auth, bookController.deleteBook);
 
+// Route pour récupérer un livre par son ID (accessible à tous)
 router.get('/:id', bookController.getBookById);
 
-// Route pour récupérer les meilleurs livres
-router.get('/bestrating', bookController.getBestRatedBooks);
+// Route pour récupérer les meilleurs livres (accessible à tous)
+router.get('/best-rated', bookController.getBestRatedBooks);
 
-// Route pour noter un livre
+// Route pour noter un livre (auth requise)
 router.post('/:id/rating', auth, bookController.rateBook);
-
-// Récupéré les trois livres les mieux notés
-router.get('/bestrating', bookController.getBestRatedBooks);
 
 module.exports = router;
