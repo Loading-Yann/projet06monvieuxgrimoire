@@ -19,6 +19,9 @@ router.put('/:id', auth, multer, bookController.updateBook);
 // Route pour supprimer un livre (auth requise)
 router.delete('/:id', auth, multer, bookController.deleteBook);
 
+router.get('/:id', bookController.getBookById);
+
+
 // Route pour récupérer les meilleurs livres
 router.get('/bestrating', bookController.getBestRatedBooks);
 

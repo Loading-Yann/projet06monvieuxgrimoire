@@ -49,6 +49,20 @@ exports.addBook = async (req, res) => {
 };
 
 
+exports.getBookById = async (req, res) => {
+  try {
+    console.log('Requête pour le livre ID :', req.params.id); // Log de l'ID reçu
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      console.warn('Livre non trouvé pour ID :', req.params.id);
+      return res.status(404).json({ message: 'Livre non trouvé' });
+    }
+    res.status(200).json(book);
+  } catch (err) {
+    console.error('Erreur lors de la récupération du livre :', err);
+    res.status(500).json({ message: 'Erreur serveur', error: err });
+  }
+};
 
 
 //Modifier un livre
