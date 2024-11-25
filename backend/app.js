@@ -50,5 +50,9 @@ app.get('/', (req, res) => {
   res.status(200).json({ message: 'Bienvenue sur le serveur backend !' });
 });
 
+const path = require('path');
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
+
 // Exporter l'application Express pour l'utiliser dans `server.js`
 module.exports = app;
