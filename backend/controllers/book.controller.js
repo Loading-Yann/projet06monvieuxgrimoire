@@ -1,5 +1,7 @@
 const Book = require('../models/book.model');
+const fs = require('fs');
 const logger = require('../utils/logger');
+const path = require('path');
 
 // Récupérer tous les livres
 exports.getBooks = async (req, res, next) => {
@@ -66,6 +68,7 @@ exports.updateBook = async (req, res, next) => {
     }
 
     if (book.userId !== req.auth.userId) {
+      logger.warn(`Tentative non autorisée : utilisateur ${req.auth.userId} tente de modifier le livre ${req.params.id}`);
       res.status(403);
       throw new Error('Requête non autorisée.');
     }
@@ -83,22 +86,36 @@ exports.updateBook = async (req, res, next) => {
   }
 };
 
-// Supprimer un livre
+// Supprimer un livre (mis à jour pour inclure la suppression de l'image)
 exports.deleteBook = async (req, res, next) => {
   try {
+    // Trouver le livre à supprimer
     const book = await Book.findById(req.params.id);
     if (!book) {
       res.status(404);
       throw new Error('Livre non trouvé.');
     }
 
+    // Vérifier que l'utilisateur est le créateur du livre
     if (book.userId !== req.auth.userId) {
+      logger.warn(`Tentative non autorisée : utilisateur ${req.auth.userId} tente de supprimer le livre ${req.params.id}`);
       res.status(403);
       throw new Error('Requête non autorisée.');
     }
 
+    // Supprimer l'image associée
+    const imagePath = path.join(__dirname, '..', book.imageUrl.replace(`${req.protocol}://${req.get('host')}/`, ''));
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+      logger.info(`Image supprimée : ${imagePath}`);
+    } else {
+      logger.warn(`Image introuvable lors de la suppression : ${imagePath}`);
+    }
+
+    // Supprimer le livre de la base de données
     await Book.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: 'Livre supprimé avec succès.' });
+    logger.info(`Livre supprimé : ID ${req.params.id}`);
   } catch (err) {
     logger.error('Erreur lors de la suppression d\'un livre :', err);
     next(err);
