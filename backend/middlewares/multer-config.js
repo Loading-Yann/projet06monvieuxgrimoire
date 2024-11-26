@@ -1,32 +1,73 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+const sharp = require('sharp');
 
-// Configuration du stockage
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
-    callback(null, 'images'); // Répertoire où les fichiers seront stockés
+    console.log('Définition du répertoire de stockage...');
+    const dir = 'images';
+    if (!fs.existsSync(dir)) {
+      console.log('Création du répertoire :', dir);
+      fs.mkdirSync(dir);
+    }
+    callback(null, dir);
   },
   filename: (req, file, callback) => {
-    const name = file.originalname.split(' ').join('_');
+    console.log('Définition du nom du fichier...');
+    const name = file.originalname.split(' ').join('_').replace(/[^a-zA-Z0-9_.-]/g, '');
     const extension = path.extname(file.originalname);
-    const timestamp = Date.now();
-    callback(null, name + '_' + timestamp + extension);
+    console.log('Nom original :', file.originalname, '| Nom généré :', `${name}_${Date.now()}${extension}`);
+    callback(null, `${name}_${Date.now()}${extension}`);
   },
 });
 
-// Vérification du type de fichier
 const fileFilter = (req, file, callback) => {
-  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-  if (allowedMimeTypes.includes(file.mimetype)) {
-    callback(null, true); // Accepte le fichier
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  console.log('Type de fichier reçu :', file.mimetype);
+  if (allowedTypes.includes(file.mimetype)) {
+    callback(null, true);
   } else {
-    callback(new Error('Type de fichier non supporté'), false);
+    console.error('Type de fichier non supporté :', file.mimetype);
+    callback(new Error('Format de fichier non pris en charge.'));
   }
 };
 
-// Création du middleware
-module.exports = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Limite à 5 Mo
-}).single('image'); // Spécifie le champ attendu pour le fichier
+const upload = multer({ storage, fileFilter });
+
+module.exports = (req, res, next) => {
+  console.log('Passage dans le middleware Multer...');
+  upload.single('image')(req, res, async (err) => {
+    if (err) {
+      console.error('Erreur Multer :', err.message);
+      return res.status(400).json({ message: err.message });
+    }
+
+    if (req.file) {
+      try {
+        console.log('Fichier reçu :', req.file);
+        const { path: filePath } = req.file;
+        const optimizedFilePath = `${filePath.split('.').slice(0, -1).join('.')}-optimized.webp`;
+
+        console.log('Optimisation du fichier avec Sharp...');
+        await sharp(filePath)
+          .resize({ width: 800 }) // Redimensionner
+          .toFormat('webp') // Convertir en WebP
+          .webp({ quality: 80 }) // Compression
+          .toFile(optimizedFilePath);
+
+        fs.unlinkSync(filePath); // Supprimer l'original
+        console.log('Fichier optimisé :', optimizedFilePath);
+
+        req.file.path = optimizedFilePath;
+        req.file.filename = path.basename(optimizedFilePath);
+      } catch (sharpError) {
+        console.error('Erreur lors de l\'optimisation de l\'image :', sharpError);
+        return res.status(500).json({ message: 'Erreur lors de l\'optimisation de l\'image.' });
+      }
+    }
+
+    console.log('Middleware Multer terminé.');
+    next();
+  });
+};

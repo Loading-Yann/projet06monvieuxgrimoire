@@ -14,15 +14,23 @@ exports.getBooks = async (req, res) => {
 // Ajouter un livre
 exports.addBook = async (req, res) => {
   try {
+    console.log('=== Début de addBook ===');
+    console.log('Headers :', req.headers);
+    console.log('Body :', req.body);
+    console.log('Fichier :', req.file);
+
     if (!req.file) {
+      console.error('Erreur : Aucun fichier reçu.');
       return res.status(400).json({ message: 'Aucun fichier téléchargé.' });
     }
 
     if (!req.body.book) {
+      console.error('Erreur : Données manquantes pour le livre.');
       return res.status(400).json({ message: 'Les données du livre sont manquantes.' });
     }
 
     const bookData = JSON.parse(req.body.book);
+    console.log('Données du livre parsées :', bookData);
 
     const book = new Book({
       ...bookData,
@@ -31,12 +39,16 @@ exports.addBook = async (req, res) => {
     });
 
     const savedBook = await book.save();
+    console.log('Livre enregistré :', savedBook);
+
     res.status(201).json({ message: 'Livre ajouté avec succès.', book: savedBook });
   } catch (err) {
     console.error('Erreur lors de l\'ajout du livre :', err);
-    res.status(400).json({ message: 'Données invalides.', error: err.message });
+    res.status(500).json({ message: 'Erreur serveur.', error: err.message });
   }
 };
+
+
 
 // Récupérer un livre par ID
 exports.getBookById = async (req, res) => {
