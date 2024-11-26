@@ -1,14 +1,15 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const path = require('path');
+const express = require('express');        // Importation d'Express.
+const mongoose = require('mongoose');      // Importation de Mongoose.
+const dotenv = require('dotenv');          // Importation de dotenv pour charger les variables d'environnement.
+const cors = require('cors');              // Importation de CORS.
+const path = require('path');              // Importation de path pour gérer les fichiers statiques.
+const bookRoutes = require('./routes/book.routes'); // Importation des routes des livres.
+const authRoutes = require('./routes/auth.routes'); // Importation des routes d'authentification.
+const errorHandler = require('./middlewares/errorHandler.middleware'); // Middleware global
 const morgan = require('morgan');
-
-const bookRoutes = require('./routes/book.routes');
-const authRoutes = require('./routes/auth.routes');
-const errorHandler = require('./middlewares/errorHandler.middleware');
-const logger = require('./utils/logger');
+const logger = require('./utils/logger'); // Logger Winston
+const cron = require('node-cron');        // Importation de node-cron pour le job périodique.
+const cleanupImages = require('./scripts/cleanup'); // Importation de la fonction de nettoyage.
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -36,10 +37,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Morgan pour journaliser les requêtes HTTP
-app.use(morgan('combined', { stream: { write: message => logger.http(message.trim()) } }));
+// Middleware pour les logs HTTP avec Morgan
+app.use(morgan('combined', {
+  stream: {
+    write: (message) => logger.http(message.trim()),
+  },
+}));
 
-// Connexion à MongoDB
+// Connexion à MongoDB via Mongoose
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => logger.info('✅ Connexion à MongoDB réussie !'))
   .catch(err => {
@@ -47,15 +52,26 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
     process.exit(1);
   });
 
+// Définition des routes
+app.use('/api/books', bookRoutes); // Les routes pour les livres
+app.use('/api/auth', authRoutes);  // Les routes pour l'authentification
+
 // Fichiers statiques pour les images
 app.use('/images', express.static(path.join(__dirname, 'images')));
-
-// Routes
-app.use('/api/books', bookRoutes);
-app.use('/api/auth', authRoutes);
 
 // Middleware global d'erreurs
 app.use(errorHandler);
 
-// Exporter l'application
+// Route de test
+app.get('/', (req, res) => {
+  res.status(200).json({ message: 'Bienvenue sur le serveur backend !' });
+});
+
+// Job périodique pour nettoyer les images orphelines
+cron.schedule('30 12 * * *', async () => { // Exécuté chaque jour à 12h30
+  logger.info('⏰ Début du job périodique de nettoyage des images.');
+  await cleanupImages(); // Appelle la fonction de nettoyage
+  logger.info('✅ Fin du job périodique de nettoyage des images.');
+});
+
 module.exports = app;
