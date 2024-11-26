@@ -1,11 +1,11 @@
-// app.js
-
 const express = require('express');        // Importation d'Express.
 const mongoose = require('mongoose');      // Importation de Mongoose.
 const dotenv = require('dotenv');          // Importation de dotenv pour charger les variables d'environnement.
 const cors = require('cors');              // Importation de CORS.
+const path = require('path');              // Importation de path pour gérer les fichiers statiques.
 const bookRoutes = require('./routes/book.routes'); // Importation des routes des livres.
 const authRoutes = require('./routes/auth.routes'); // Importation des routes d'authentification.
+const errorHandler = require('./middlewares/errorHandler.middleware'); // Middleware global
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -43,16 +43,18 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 
 // Définition des routes
 app.use('/api/books', bookRoutes); // Les routes pour les livres
-app.use('/api/auth', authRoutes);   // Les routes pour l'authentification
+app.use('/api/auth', authRoutes);  // Les routes pour l'authentification
 
-// Route de test
+// Fichiers statiques pour les images
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
+// Middleware global d'erreurs (placé après toutes les routes)
+app.use(errorHandler);
+
+// Route de test (peut être déplacée avant le middleware global)
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Bienvenue sur le serveur backend !' });
 });
-
-const path = require('path');
-app.use('/images', express.static(path.join(__dirname, 'images')));
-
 
 // Exporter l'application Express pour l'utiliser dans `server.js`
 module.exports = app;
