@@ -1,4 +1,5 @@
 const Book = require('../models/book.model');
+const logger = require('../utils/logger');
 
 // Récupérer tous les livres
 exports.getBooks = async (req, res, next) => {
@@ -6,7 +7,8 @@ exports.getBooks = async (req, res, next) => {
     const books = await Book.find();
     res.status(200).json(books);
   } catch (err) {
-    next(err); // Passe l'erreur au middleware global
+    logger.error('Erreur lors de la récupération des livres :', err);
+    next(err);
   }
 };
 
@@ -34,7 +36,8 @@ exports.addBook = async (req, res, next) => {
     const savedBook = await book.save();
     res.status(201).json({ message: 'Livre ajouté avec succès.', book: savedBook });
   } catch (err) {
-    next(err); // Passe l'erreur au middleware global
+    logger.error('Erreur lors de l\'ajout du livre :', err);
+    next(err);
   }
 };
 
@@ -48,6 +51,7 @@ exports.getBookById = async (req, res, next) => {
     }
     res.status(200).json(book);
   } catch (err) {
+    logger.error('Erreur lors de la récupération d\'un livre :', err);
     next(err);
   }
 };
@@ -74,6 +78,7 @@ exports.updateBook = async (req, res, next) => {
     const updatedBook = await Book.findByIdAndUpdate(req.params.id, updatedData, { new: true, runValidators: true });
     res.status(200).json({ message: 'Livre modifié avec succès.', book: updatedBook });
   } catch (err) {
+    logger.error('Erreur lors de la modification d\'un livre :', err);
     next(err);
   }
 };
@@ -95,6 +100,7 @@ exports.deleteBook = async (req, res, next) => {
     await Book.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: 'Livre supprimé avec succès.' });
   } catch (err) {
+    logger.error('Erreur lors de la suppression d\'un livre :', err);
     next(err);
   }
 };
@@ -128,6 +134,7 @@ exports.rateBook = async (req, res, next) => {
     const updatedBook = await book.save();
     res.status(200).json(updatedBook);
   } catch (err) {
+    logger.error('Erreur lors de la notation d\'un livre :', err);
     next(err);
   }
 };
@@ -138,6 +145,7 @@ exports.getBestRatedBooks = async (req, res, next) => {
     const books = await Book.find().sort({ averageRating: -1 }).limit(3);
     res.status(200).json(books);
   } catch (err) {
+    logger.error('Erreur lors de la récupération des meilleurs livres :', err);
     next(err);
   }
 };
