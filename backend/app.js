@@ -67,16 +67,17 @@ app.get('/', (req, res) => {
   res.status(200).json({ message: 'Bienvenue sur le serveur backend !' });
 });
 
-// Job périodique pour nettoyer les images orphelines
-// Job périodique pour nettoyer les images orphelines
-cron.schedule('0 0 * * *', async () => { // Exemple : tous les jours à minuit
-  logger.info('⏰ Début du job périodique de nettoyage des images.');
-  try {
-    await cleanupImages();
-    logger.info('✅ Fin du job périodique de nettoyage des images.');
-  } catch (err) {
-    logger.error('❌ Erreur pendant le job périodique :', err);
-  }
-});
+// Job périodique pour nettoyer les images orphelines (désactivé en mode test)
+if (process.env.NODE_ENV !== 'test') {
+  cron.schedule('0 0 * * *', async () => { // Exemple : tous les jours à minuit
+    logger.info('⏰ Début du job périodique de nettoyage des images.');
+    try {
+      await cleanupImages();
+      logger.info('✅ Fin du job périodique de nettoyage des images.');
+    } catch (err) {
+      logger.error('❌ Erreur pendant le job périodique :', err);
+    }
+  });
+}
 
 module.exports = app; // Export de l'instance Express
