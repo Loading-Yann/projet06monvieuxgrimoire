@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 
+// Obtenir l'année actuelle
+const currentYear = new Date().getFullYear();
+
 // Schéma des évaluations
 const ratingSchema = mongoose.Schema({
   userId: { 
@@ -23,12 +26,14 @@ const bookSchema = mongoose.Schema({
   title: { 
     type: String, 
     required: true, // Le titre est obligatoire
-    trim: true // Suppression des espaces inutiles
+    trim: true, // Suppression des espaces inutiles
+    minlength: 1 // Autorise des titres d'au moins un caractère
   },
   author: { 
     type: String, 
     required: true, // L'auteur est obligatoire
-    trim: true 
+    trim: true, 
+    minlength: 2 // L'auteur doit contenir au moins 2 caractères significatifs
   },
   genre: { 
     type: String, 
@@ -38,7 +43,8 @@ const bookSchema = mongoose.Schema({
   year: { 
     type: Number, 
     required: true, // L'année de publication est obligatoire
-    min: 0 // Assure que l'année est positive
+    min: -Infinity, // Autorise les dates avant J.-C.
+    max: currentYear + 15 // Interdit une date trop éloignée dans le futur
   },
   imageUrl: { 
     type: String, 
