@@ -69,7 +69,7 @@ app.get('/', (req, res) => {
 
 // Job périodique pour nettoyer les images orphelines
 // Job périodique pour nettoyer les images orphelines
-cron.schedule('02 13 * * *', async () => { // Exemple : tous les jours à 13h02
+cron.schedule('0 0 * * *', async () => { // Exemple : tous les jours à minuit
   logger.info('⏰ Début du job périodique de nettoyage des images.');
   try {
     await cleanupImages();
