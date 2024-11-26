@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 const logger = require('../utils/logger');
 const cleanupImages = require('../utils/cleanupImages');
 
+// Charger les variables d'environnement
+dotenv.config();
+
 (async () => {
   try {
-    // Connexion indépendante pour le script
+    // Connexion indépendante à la base de données
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -18,9 +22,9 @@ const cleanupImages = require('../utils/cleanupImages');
   } catch (err) {
     logger.error('❌ Erreur dans le script de nettoyage :', err);
   } finally {
-    // Déconnexion de MongoDB
+    // Déconnexion propre
     await mongoose.disconnect();
     logger.info('🔌 Connexion MongoDB fermée pour le script de nettoyage.');
-    process.exit(); // Termine proprement le script
+    process.exit();
   }
 })();

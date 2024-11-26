@@ -9,7 +9,7 @@ const errorHandler = require('./middlewares/errorHandler.middleware'); // Middle
 const morgan = require('morgan');
 const logger = require('./utils/logger'); // Logger Winston
 const cron = require('node-cron');        // Importation de node-cron pour le job périodique.
-const cleanupImages = require('./scripts/cleanup'); // Importation de la fonction de nettoyage.
+const cleanupImages = require('./utils/cleanupImages'); // Importation corrigée
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -68,7 +68,8 @@ app.get('/', (req, res) => {
 });
 
 // Job périodique pour nettoyer les images orphelines
-cron.schedule('48 12 * * *', async () => { // Exécuté chaque jour à 12h48
+// Job périodique pour nettoyer les images orphelines
+cron.schedule('58 12 * * *', async () => { // Exemple : tous les jours à 12h58
   logger.info('⏰ Début du job périodique de nettoyage des images.');
   try {
     await cleanupImages();
@@ -77,4 +78,3 @@ cron.schedule('48 12 * * *', async () => { // Exécuté chaque jour à 12h48
     logger.error('❌ Erreur pendant le job périodique :', err);
   }
 });
-
