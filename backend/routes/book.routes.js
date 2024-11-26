@@ -22,6 +22,7 @@ router.get('/:id', bookController.getBookById);
 // Route pour récupérer les meilleurs livres (accessible à tous)
 router.get('/best-rated', bookController.getBestRatedBooks);
 
+
 // Route pour noter un livre (auth requise)
 router.post('/:id/rating', auth, bookController.rateBook);
 

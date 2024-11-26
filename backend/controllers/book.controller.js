@@ -112,55 +112,48 @@ exports.deleteBook = async (req, res) => {
   }
 };
 
-// Obtenir les livres les mieux notés
-exports.getBestRatedBooks = async (req, res) => {
-  try {
-    const books = await Book.find().sort({ averageRating: -1 }).limit(5);
-    res.status(200).json(books);
-  } catch (err) {
-    res.status(500).json({ message: 'Erreur serveur', error: err });
-  }
-};
-
 // noter un livre
 exports.rateBook = async (req, res) => {
   try {
-    const bookId = req.params.id;
-    const { userId, rating } = req.body;
+    console.log('Corps de la requête reçu :', req.body);
+    console.log('ID utilisateur depuis auth middleware :', req.auth.userId);
 
-    // Vérifier si la note est entre 0 et 5
-    if (rating < 0 || rating > 5) {
-      return res.status(400).json({ message: "La note doit être comprise entre 0 et 5." });
+    const bookId = req.params.id;
+    const { rating } = req.body;
+    const userId = req.auth.userId; // Récupérer l'ID utilisateur depuis le middleware
+
+    // Vérifie que les données sont valides
+    if (!rating || typeof rating !== 'number') {
+      return res.status(400).json({ message: 'La note doit être un nombre compris entre 0 et 5.' });
     }
 
-    // Vérifier si le livre existe
+    // Vérifie que le livre existe
     const book = await Book.findById(bookId);
     if (!book) {
-      return res.status(404).json({ message: "Livre introuvable." });
+      return res.status(404).json({ message: 'Livre introuvable.' });
     }
 
-    // Vérifier si l'utilisateur a déjà noté ce livre
+    // Vérifie si l'utilisateur a déjà noté
     const existingRating = book.ratings.find(r => r.userId === userId);
     if (existingRating) {
-      return res.status(400).json({ message: "L'utilisateur a déjà noté ce livre." });
+      return res.status(400).json({ message: 'Vous avez déjà noté ce livre.' });
     }
 
-    // Ajouter la note et recalculer la moyenne
+    // Ajoute la nouvelle note et met à jour la moyenne
     book.ratings.push({ userId, grade: rating });
-    book.averageRating =
-      book.ratings.reduce((sum, r) => sum + r.grade, 0) / book.ratings.length;
+    book.averageRating = book.ratings.reduce((sum, r) => sum + r.grade, 0) / book.ratings.length;
 
-    // Enregistrer les modifications
     await book.save();
 
     res.status(200).json(book);
   } catch (error) {
-    console.error("Erreur lors de la notation du livre :", error);
-    res.status(500).json({ message: "Erreur serveur", error });
+    console.error('Erreur lors de la notation du livre :', error);
+    res.status(500).json({ message: 'Erreur serveur', error });
   }
 };
 
 
+  // Récupérer les 3 livres avec la meilleure moyenne
 exports.getBestRatedBooks = async (req, res) => {
   try {
     // Récupérer les 3 livres avec la meilleure moyenne
