@@ -6,7 +6,7 @@ const multer = require('../middlewares/multer-config'); // Middleware pour les f
 const validateId = require('../middlewares/validateId.middleware'); // Middleware de validation d'ID
 
 // Route pour récupérer les 3 meilleurs livres (accessible à tous)
-router.get('/best-rated', bookController.getBestRatedBooks);
+router.get('/bestrating', bookController.getBestRatedBooks); // Aligner avec la spécification
 
 // Route pour récupérer tous les livres (accessible à tous)
 router.get('/', bookController.getBooks);
@@ -15,7 +15,7 @@ router.get('/', bookController.getBooks);
 router.get('/:id', validateId, bookController.getBookById);
 
 // Route pour ajouter un livre (authentification requise)
-router.post('/', auth, multer, bookController.addBook); 
+router.post('/', auth, multer, bookController.addBook);
 
 // Route pour modifier un livre (authentification requise)
 router.put('/:id', auth, validateId, multer, bookController.updateBook);

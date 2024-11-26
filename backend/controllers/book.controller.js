@@ -159,6 +159,7 @@ exports.rateBook = async (req, res, next) => {
 // Récupérer les 3 livres avec la meilleure moyenne
 exports.getBestRatedBooks = async (req, res, next) => {
   try {
+    logger.info('Route appelée : /api/books/bestrating');
     const books = await Book.find().sort({ averageRating: -1 }).limit(3);
     res.status(200).json(books);
   } catch (err) {
@@ -166,3 +167,4 @@ exports.getBestRatedBooks = async (req, res, next) => {
     next(err);
   }
 };
+
