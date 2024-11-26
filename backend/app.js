@@ -68,10 +68,13 @@ app.get('/', (req, res) => {
 });
 
 // Job périodique pour nettoyer les images orphelines
-cron.schedule('30 12 * * *', async () => { // Exécuté chaque jour à 12h30
+cron.schedule('48 12 * * *', async () => { // Exécuté chaque jour à 12h48
   logger.info('⏰ Début du job périodique de nettoyage des images.');
-  await cleanupImages(); // Appelle la fonction de nettoyage
-  logger.info('✅ Fin du job périodique de nettoyage des images.');
+  try {
+    await cleanupImages();
+    logger.info('✅ Fin du job périodique de nettoyage des images.');
+  } catch (err) {
+    logger.error('❌ Erreur pendant le job périodique :', err);
+  }
 });
 
-module.exports = app;
