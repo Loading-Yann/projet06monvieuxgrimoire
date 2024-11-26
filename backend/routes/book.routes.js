@@ -1,29 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const bookController = require('../controllers/book.controller'); // Chemin vers le contrôleur des livres
+const bookController = require('../controllers/book.controller'); // Contrôleurs
 const auth = require('../middlewares/auth.middleware'); // Middleware d'authentification
-const multer = require('../middlewares/multer-config'); // Middleware pour le traitement des fichiers
+const multer = require('../middlewares/multer-config'); // Middleware pour les fichiers
+const validateId = require('../middlewares/validateId.middleware'); // Middleware de validation d'ID
+
+// Route pour récupérer les 3 meilleurs livres (accessible à tous)
+router.get('/best-rated', bookController.getBestRatedBooks);
 
 // Route pour récupérer tous les livres (accessible à tous)
 router.get('/', bookController.getBooks);
 
-// Route pour ajouter un livre (auth requise)
-router.post('/', auth, multer, bookController.addBook);
+// Route pour récupérer un livre par ID (accessible à tous)
+router.get('/:id', validateId, bookController.getBookById);
 
-// Route pour modifier un livre (auth requise)
-router.put('/:id', auth, multer, bookController.updateBook);
+// Route pour ajouter un livre (authentification requise)
+router.post('/', auth, validateId, multer, bookController.addBook);
 
-// Route pour supprimer un livre (auth requise)
-router.delete('/:id', auth, bookController.deleteBook);
+// Route pour modifier un livre (authentification requise)
+router.put('/:id', auth, validateId, multer, bookController.updateBook);
 
-// Route pour récupérer un livre par son ID (accessible à tous)
-router.get('/:id', bookController.getBookById);
+// Route pour supprimer un livre (authentification requise)
+router.delete('/:id', auth, validateId, bookController.deleteBook);
 
-// Route pour récupérer les meilleurs livres (accessible à tous)
-router.get('/best-rated', bookController.getBestRatedBooks);
-
-
-// Route pour noter un livre (auth requise)
-router.post('/:id/rating', auth, bookController.rateBook);
+// Route pour noter un livre (authentification requise)
+router.post('/:id/rating', auth, validateId, bookController.rateBook);
 
 module.exports = router;
