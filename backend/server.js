@@ -1,6 +1,9 @@
-// server.js
+const app = require('./app'); // Importation de l'application Express
 
-const app = require('./app');  // Importation de l'application Express depuis `app.js`
+const errorHandler = require('./middlewares/errorHandler.middleware'); // Middleware global d'erreurs
+
+// Middleware global d'erreurs
+app.use(errorHandler);
 
 // Définition du port
 const PORT = process.env.PORT || 4000;

@@ -15,7 +15,7 @@ router.get('/', bookController.getBooks);
 router.get('/:id', validateId, bookController.getBookById);
 
 // Route pour ajouter un livre (authentification requise)
-router.post('/', auth, multer, bookController.addBook); // Pas besoin de validateId ici
+router.post('/', auth, multer, bookController.addBook); 
 
 // Route pour modifier un livre (authentification requise)
 router.put('/:id', auth, validateId, multer, bookController.updateBook);
