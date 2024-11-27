@@ -1,15 +1,19 @@
-const express = require('express');        // Importation d'Express.
-const mongoose = require('mongoose');      // Importation de Mongoose.
-const dotenv = require('dotenv');          // Importation de dotenv pour charger les variables d'environnement.
-const cors = require('cors');              // Importation de CORS.
-const path = require('path');              // Importation de path pour gérer les fichiers statiques.
-const bookRoutes = require('./routes/book.routes'); // Importation des routes des livres.
-const authRoutes = require('./routes/auth.routes'); // Importation des routes d'authentification.
-const errorHandler = require('./middlewares/errorHandler.middleware'); // Middleware global
+const express = require('express');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const cors = require('cors');
+const path = require('path');
 const morgan = require('morgan');
-const logger = require('./utils/logger'); // Logger Winston
-const cron = require('node-cron');        // Importation de node-cron pour le job périodique.
-const cleanupImages = require('./utils/cleanupImages'); 
+const logger = require('./utils/logger');
+const cron = require('node-cron');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swaggerOptions'); 
+const cleanupImages = require('./utils/cleanupImages');
+
+// Routes
+const bookRoutes = require('./routes/book.routes');
+const authRoutes = require('./routes/auth.routes');
+const errorHandler = require('./middlewares/errorHandler.middleware');
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -27,49 +31,57 @@ if (!process.env.PORT) {
 // Création de l'application Express
 const app = express();
 
+// Configuration Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
 // Middleware pour parser les requêtes JSON
 app.use(express.json());
 
 // Configuration de CORS
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 // Middleware pour les logs HTTP avec Morgan
-app.use(morgan('combined', {
-  stream: {
-    write: (message) => logger.http(message.trim()),
-  },
-}));
+app.use(
+  morgan('combined', {
+    stream: {
+      write: (message) => logger.http(message.trim()),
+    },
+  })
+);
 
 // Connexion à MongoDB via Mongoose
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose
+  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => logger.info('✅ Connexion à MongoDB réussie !'))
-  .catch(err => {
+  .catch((err) => {
     logger.error('❌ Connexion à MongoDB échouée :', err);
     process.exit(1);
   });
 
 // Définition des routes
-app.use('/api/books', bookRoutes); // Les routes pour les livres
-app.use('/api/auth', authRoutes);  // Les routes pour l'authentification
+app.use('/api/books', bookRoutes); // Routes pour les livres
+app.use('/api/auth', authRoutes);  // Routes pour l'authentification
 
 // Fichiers statiques pour les images
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// Middleware global d'erreurs
+// Middleware global pour gérer les erreurs
 app.use(errorHandler);
 
-// Route de test
+// Route de test (racine)
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Bienvenue sur le serveur backend !' });
 });
 
 // Job périodique pour nettoyer les images orphelines (désactivé en mode test)
 if (process.env.NODE_ENV !== 'test') {
-  cron.schedule('0 0 * * *', async () => { // Exemple : tous les jours à minuit
+  cron.schedule('0 0 * * *', async () => {
     logger.info('⏰ Début du job périodique de nettoyage des images.');
     try {
       await cleanupImages();
@@ -80,4 +92,5 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-module.exports = app; // Export de l'instance Express
+// Export de l'application Express
+module.exports = app;
