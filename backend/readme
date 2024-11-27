@@ -1,3 +1,11 @@
 documentation de l'api par swagger : 
 
 http://localhost:4000/api-docs/
+
+Mark down MD = mettre des illustration dans le readme. 
+
+type script pour la prochaine... 
+
+helmet pour sécuriser les headers 
+cassera les images
+Faire la config pour que ça ne casse pas les images. 
