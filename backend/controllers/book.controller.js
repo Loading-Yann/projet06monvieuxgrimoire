@@ -86,7 +86,7 @@ exports.updateBook = async (req, res, next) => {
   }
 };
 
-// Supprimer un livre (mis à jour pour inclure la suppression de l'image)
+// Supprimer un livre 
 exports.deleteBook = async (req, res, next) => {
   try {
     // Trouver le livre à supprimer
