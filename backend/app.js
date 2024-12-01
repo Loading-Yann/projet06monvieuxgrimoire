@@ -9,6 +9,7 @@ const cron = require('node-cron');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swaggerOptions'); 
 const cleanupImages = require('./utils/cleanupImages');
+const rateLimit = require('express-rate-limit');
 
 // Routes
 const bookRoutes = require('./routes/book.routes');
@@ -34,6 +35,20 @@ const app = express();
 // Configuration Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
+// Middleware pour limiter les requêtes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requêtes max par fenêtre de temps
+  message: {
+    status: 429,
+    error: 'Trop de requêtes effectuées depuis cette IP. Veuillez réessayer plus tard.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter); // Appliquer la limitation globalement
+
 // Middleware pour parser les requêtes JSON
 app.use(express.json());
 
@@ -55,7 +70,7 @@ app.use(
   })
 );
 
-// Connexion à MongoDB via Mongoose
+// Connexion à MongoDB
 mongoose
   .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => logger.info('✅ Connexion à MongoDB réussie !'))
@@ -65,8 +80,8 @@ mongoose
   });
 
 // Définition des routes
-app.use('/api/books', bookRoutes); // Routes pour les livres
-app.use('/api/auth', authRoutes);  // Routes pour l'authentification
+app.use('/api/books', bookRoutes);
+app.use('/api/auth', authRoutes);
 
 // Fichiers statiques pour les images
 app.use('/images', express.static(path.join(__dirname, 'images')));
@@ -74,12 +89,12 @@ app.use('/images', express.static(path.join(__dirname, 'images')));
 // Middleware global pour gérer les erreurs
 app.use(errorHandler);
 
-// Route de test (racine)
+// Route de test
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Bienvenue sur le serveur backend !' });
 });
 
-// Job périodique pour nettoyer les images orphelines (désactivé en mode test)
+// Job périodique pour nettoyer les images orphelines
 if (process.env.NODE_ENV !== 'test') {
   cron.schedule('0 0 * * *', async () => {
     logger.info('⏰ Début du job périodique de nettoyage des images.');
@@ -92,5 +107,4 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-// Export de l'application Express
 module.exports = app;
