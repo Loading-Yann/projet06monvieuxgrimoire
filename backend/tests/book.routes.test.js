@@ -2,30 +2,56 @@ const request = require('supertest');
 const app = require('../app');
 const mongoose = require('mongoose');
 const Book = require('../models/book.model');
+const User = require('../models/user.model');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const fs = require('fs');
+
+let testToken;
+
+// Fonction pour générer un utilisateur et un token JWT valide
+const generateTestUserAndToken = async () => {
+  const email = 'testuser@example.com';
+  const password = 'password123';
+
+  // Vérifie si l'utilisateur de test existe déjà
+  let user = await User.findOne({ email });
+  if (!user) {
+    user = await User.create({
+      email,
+      password: await bcrypt.hash(password, 10),
+    });
+  }
+
+  const response = await request(app).post('/api/auth/login').send({ email, password });
+
+  if (response.status !== 200) {
+    throw new Error('Impossible de générer un token JWT valide');
+  }
+
+  return response.body.token;
+};
+
+// Fonction pour extraire l'userId du token
+const getUserIdFromToken = (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  return decoded.userId;
+};
 
 // Connexion à MongoDB avant les tests
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+  testToken = await generateTestUserAndToken();
 });
 
-// Nettoyer la base et supprimer les fichiers générés après chaque test
+// Nettoyage après chaque test
 afterEach(async () => {
-  // Suppression des livres dans la base de données
   await Book.deleteMany({});
-
-  // Recherche et suppression des fichiers générés par les tests
   const imageFolder = './images';
   const files = fs.readdirSync(imageFolder);
-
   files.forEach((file) => {
     if (file.startsWith('sample')) {
-      const filePath = `${imageFolder}/${file}`;
-      try {
-        fs.unlinkSync(filePath);
-      } catch (error) {
-        console.error(`Erreur lors de la suppression du fichier ${filePath} : ${error.message}`);
-      }
+      fs.unlinkSync(`${imageFolder}/${file}`);
     }
   });
 });
@@ -33,7 +59,7 @@ afterEach(async () => {
 // Déconnexion après les tests
 afterAll(async () => {
   await mongoose.disconnect();
-  await new Promise((resolve) => setTimeout(resolve, 1000)); // Délai pour fermer proprement les connexions
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 });
 
 describe('Tests pour les routes /api/books', () => {
@@ -46,8 +72,8 @@ describe('Tests pour les routes /api/books', () => {
   test('POST /api/books - devrait ajouter un livre', async () => {
     const response = await request(app)
       .post('/api/books')
-      .set('Authorization', `Bearer ${process.env.TEST_USER_TOKEN}`) // Token valide
-      .attach('image', 'tests/sample.jpg') // Ajout d'un fichier image
+      .set('Authorization', `Bearer ${testToken}`)
+      .attach('image', 'tests/sample.jpg')
       .field(
         'book',
         JSON.stringify({
@@ -69,7 +95,7 @@ describe('Tests pour les routes /api/books', () => {
       year: 1990,
       genre: 'Fiction',
       imageUrl: 'test.jpg',
-      userId: 'fakeUserId123', // Ajout d'un userId
+      userId: 'fakeUserId123',
     });
 
     const response = await request(app).get(`/api/books/${book._id}`);
@@ -78,18 +104,20 @@ describe('Tests pour les routes /api/books', () => {
   });
 
   test('DELETE /api/books/:id - devrait supprimer un livre', async () => {
+    const userId = getUserIdFromToken(testToken);
+
     const book = await Book.create({
       title: 'To Be Deleted',
       author: 'Author',
       year: 1990,
       genre: 'Fiction',
       imageUrl: 'test.jpg',
-      userId: 'fakeUserId123', // Ajout d'un userId
+      userId,
     });
 
     const response = await request(app)
       .delete(`/api/books/${book._id}`)
-      .set('Authorization', `Bearer ${process.env.TEST_USER_TOKEN}`);
+      .set('Authorization', `Bearer ${testToken}`);
 
     expect(response.status).toBe(200);
     expect(response.body.message).toBe('Livre supprimé avec succès.');
