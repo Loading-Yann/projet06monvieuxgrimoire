@@ -9,7 +9,7 @@ const cron = require('node-cron');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swaggerOptions'); 
 const cleanupImages = require('./utils/cleanupImages');
-const rateLimit = require('express-rate-limit');
+const rateLimiter = require('./middlewares/rateLimiter.middleware'); // Middleware de limitation
 
 // Routes
 const bookRoutes = require('./routes/book.routes');
@@ -35,19 +35,8 @@ const app = express();
 // Configuration Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
-// Middleware pour limiter les requêtes
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requêtes max par fenêtre de temps
-  message: {
-    status: 429,
-    error: 'Trop de requêtes effectuées depuis cette IP. Veuillez réessayer plus tard.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use(limiter); // Appliquer la limitation globalement
+// Application globale du middleware de limitation
+app.use(rateLimiter); // Middleware global pour limiter les requêtes
 
 // Middleware pour parser les requêtes JSON
 app.use(express.json());
