@@ -32,6 +32,20 @@ if (!process.env.PORT) {
 // Création de l'application Express
 const app = express();
 
+const helmet = require('helmet');
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        scriptSrc: ["'self'", "'unsafe-inline'"], // Autorise les scripts inline (pour Swagger)
+      },
+    },
+    crossOriginResourcePolicy: false, // Permet le chargement des images depuis d'autres origines
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // Autorise les images cross-origin
+  })
+);
+
 // Configuration Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
